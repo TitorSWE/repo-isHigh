@@ -5,6 +5,8 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 //import { supabase } from './lib/supabase'
 
+import {database} from 'firebase/database';
+
 // Simun
 import {
   getStorage,
@@ -12,7 +14,6 @@ import {
   uploadBytes
 } from "firebase/storage";
 import { app } from "./firebaseConfig";
-import { useState } from "react";
 
 export const storage = getStorage(app);
 export const audioRef = ref(storage, "audio/");
@@ -23,7 +24,7 @@ export default function App() {
 
   const recordingSettings = {
     android: {
-      extension: ".m4a",
+      extension: ".mp4",
       outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
       audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
       sampleRate: 44100,
@@ -31,9 +32,9 @@ export default function App() {
       bitRate: 128000,
     },
     ios: {
-      extension: ".m4a",
-      outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
-      audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MIN,
+      extension: ".wav",
+      outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_LINEARPCM,
+      audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
       sampleRate: 44100,
       numberOfChannels: 2,
       bitRate: 128000,
@@ -116,8 +117,33 @@ export default function App() {
       uploadBytes(newAudioRef, blob).then((snapshot) => {
         console.log("Uploaded a blob!");
       });
+
+      //uploadInTable(name);
+      //getAnswer(name);
     };
     
+    const uploadInTable = async (name) => {
+      console.log("uploadInTable");
+      database()
+        .ref(name)
+        .set({
+          value: false,
+        })
+        .then(() => console.log('Data set.'));
+    }
+
+    const answer = null;
+    const getAnswer = async (name) => {
+      console.log("getAnswer");
+      database()
+        .ref(name)
+        .once('value')
+        .then(snapshot => {
+          console.log('Answer ', snapshot.val());
+          answer = snapshot.val();
+        });
+    }
+
     /*
     return (
       <div
@@ -169,12 +195,18 @@ export default function App() {
   // Me
   return (
     <View style={styles.container}>
-      <Text>Am I drunk ? I bet I don't !</Text>
-      <Text>Let's proove it</Text>
+      <Text style={styles.title}>Suis-je en colère ?</Text>
+      <Text style={styles.title}> Je te parie que non !</Text>
+      <Text style={styles.proof}>Prouvons-le par un "bonjour" :</Text>
       <Button
         title={isRecording ? 'Stop Recording' : 'Start Recording'}
         onPress={isRecording ? stopRecording : startRecording}
+        backgroundColor='#ce5400'
+        color='#000000'
       />
+      {answer ?
+        <Text style={styles.answer}>Réponse : {answer}</Text>
+      : null}
       <StatusBar style="auto" />
     </View>
   );
@@ -184,10 +216,25 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffc878',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  title: {
+    fontSize: 24,
+    color: '#ce5400',
+  },
+  proof: {
+    fontSize: 18,
+    color: '#ce5400',
+    fontStyle: 'italic',
+    marginTop: 25,
+  },
+  answer: {
+    fontSize: 18,
+    color: '#ce5400',
+    marginTop: 25,
+  }
 });
 
 
