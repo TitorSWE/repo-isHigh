@@ -5,6 +5,8 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 //import { supabase } from './lib/supabase'
 
+import {AudioManager, AudioEncoderAndroidType, AudioSourceAndroidType} from 'react-native-audio-recorder-player'
+
 import {database} from 'firebase/database';
 
 // Simun
@@ -88,6 +90,7 @@ export default function App() {
     handleUpload(blob,recordingName,fileType);
   };
 
+  // Convert uri to blob
   const uriToBlob = async (uri) => {
     const blob = await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -107,9 +110,7 @@ export default function App() {
   };
 
 
-  // Simun  
-  
-    // Methods
+    // Upload blob to firebase
     const handleUpload = async (blob,name,type) => {
       console.log("handleUpload");
       const newAudioRef = ref(storage, "audio/" + name + "." + type);
@@ -118,19 +119,9 @@ export default function App() {
         console.log("Uploaded a blob!");
       });
 
-      //uploadInTable(name);
+      //uploadInTable(name,false);
       //getAnswer(name);
     };
-    
-    const uploadInTable = async (name) => {
-      console.log("uploadInTable");
-      database()
-        .ref(name)
-        .set({
-          value: false,
-        })
-        .then(() => console.log('Data set.'));
-    }
 
     const answer = null;
     const getAnswer = async (name) => {
@@ -142,57 +133,20 @@ export default function App() {
           console.log('Answer ', snapshot.val());
           answer = snapshot.val();
         });
+      
+      uploadInTable(name,answer);
     }
 
-    /*
-    return (
-      <div
-        style={{
-          textAlign: "center",
-        }}
-      >
-        <h1 className="">Welcome {user.email} </h1>
-        <div id="button0"></div>
-        <audio id="firstAudioId"></audio>
-        <div name="upload" className="btn btn-outline-secondary">
-          <div className="btn btn-success">Upload a song</div>
-          <form
-            onSubmit={handleUpload}
-            style={{
-              textAlign: "center",
-            }}
-          >
-            <input type="file" id="file" />
-            <button
-              type="submit"
-              className="btn btn-outline-dark"
-              style={{ marginLeft: 10 }}
-            >
-              Upload
-            </button>
-          </form>
-        </div>
-        <button onClick={handleList}>List all audio</button>
-  
-        <div name="separator" id="separator" style={{ padding: 15 }}>
-          {!hasRun
-            ? "Loading ..."
-            : songs
-                .sort()
-                .filter((song, ndx) => {
-                  return ndx % 2;
-                })
-                .map((song, ind) => (
-                  <SongButton key={ind} title={song.name}></SongButton>
-                ))}
-        </div>
-        <SongButton title={"hello"}></SongButton>
-      </div>
-    );
-  };
-  */
+    const uploadInTable = async (name,answer) => {
+      console.log("uploadInTable");
+      database()
+        .ref(name)
+        .set({
+          value: answer,
+        })
+        .then(() => console.log('Data set.'));
+    }
 
-  // Me
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Suis-je en colère ?</Text>
@@ -236,60 +190,3 @@ const styles = StyleSheet.create({
     marginTop: 25,
   }
 });
-
-
-
-  /*
-  const uploadAudio = async () => {
-    const uri = recording.getURI();
-    console.log('Recording stored at', uri);
-    try {
-      const blob = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = () => {
-          try {
-            resolve(xhr.response);
-          } catch (error) {
-            console.log("error:", error);
-          }
-        };
-        xhr.onerror = (e) => {
-          console.log(JSON.stringify(e));
-          reject(new TypeError("Network request failed"));
-        };
-        xhr.responseType = "blob";
-        xhr.open("GET", uri, true);
-        xhr.send(null);
-      });
-
-      if (blob != null) {
-        //console.log("blob:", blob);
-        const uriParts = uri.split(/\.|\//);
-        //console.log("uriParts:", uriParts);
-        const recordingName = uriParts[uriParts.length - 2];
-        const fileType = uriParts[uriParts.length - 1];
-
-        try {
-          const { data, error } = await supabase
-            .storage
-            .from('audios')
-            .upload(`${recordingName}.${fileType}`, blob, {
-              cacheControl: '3600',
-              contentType: `audio/${fileType}`,
-              upsert: true
-            })
-        } catch (error) {
-          if (error instanceof Error) {
-            console.log(error.message)
-          }
-        }
-
-        blob.close();
-      } else {
-        console.log("error with blob");
-      }
-    } catch (error) {
-      console.log("error:", error);
-    }
-  };
-  */
